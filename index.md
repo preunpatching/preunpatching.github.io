@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
    <head>
-      <title>PreUnPatching</title>
    </head>
    <body>
      <h1>Start Page</h1>
@@ -10,7 +9,7 @@
       </p>
      <h1>Links</h1>
       <p>
-         <a href="Scratch 3.0 Beta"> in HTML: it
+         <a href="/Scratch 3.0 Beta">Scratch 3.0 Beta</a> in HTML: it
          almost fully works, from Griffpatch's
          modified Scratch 3.0 Beta.
       </p>
