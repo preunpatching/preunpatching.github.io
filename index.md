@@ -12,8 +12,13 @@
           almost fully works, from Griffpatch's
           modified Scratch 3.0 Beta.
       </p>
+      <p>
           <a href="/Scratch 3.0 Beta Fallback/Scratch 3.0 Beta.html">Scratch 3.0 Beta Fallback</a>:
           same as Scratch 3.0 Beta, but without icons(no "static" folder). 
+      </p>
       <p>
+         <a href="/h.zip">H</a>: Download the album of H!
+      </p>
+         
    </body>
 </html>
