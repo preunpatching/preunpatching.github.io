@@ -20,7 +20,7 @@
          <a href="/h.zip">H</a>: Download the album of H!
       </p>
       <p>
-         <a href="https://studio.code.org/c/2178009988">Code.org Minecraft</a>: Play Minecraft made out of Code.org blocks!
+         <a href="https://studio.code.org/c/2178019603">Code.org Minecraft</a>: Play Minecraft made out of Code.org blocks!
       </p>
    </body>
 </html>
