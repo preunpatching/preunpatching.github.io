@@ -22,5 +22,9 @@
       <p>
          <a href="https://studio.code.org/c/2178019603">Code.org Minecraft</a>: Play Minecraft made out of Code.org blocks!
       </p>
+      <p>
+         <a href="death.zip">Death GIF</a>: Download the Death GIF to prank your friends!
+         <b>WARNING</b>: This can cause your device to freeze or crash. <u>Please use it with caution.</u>
+      </p>
    </body>
 </html>
