@@ -26,5 +26,8 @@
          <a href="death.zip">Death GIF</a>: Download the Death GIF to prank your friends!
          <b>WARNING</b>: This can cause your device to freeze or crash. <u>Please use it with caution.</u>
       </p>
+      <p>
+         <a href="UltimateGoos.zip">UltimateGoos v0.12 (DesktopGoose v0.31)</a>: Download UltimateGoos to have fun!
+      </p>
    </body>
 </html>
