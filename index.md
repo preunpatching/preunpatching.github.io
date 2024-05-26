@@ -29,5 +29,8 @@
       <p>
          <a href="UltimateGoos.zip">UltimateGoos v0.12 (DesktopGoose v0.31)</a>: Download UltimateGoos to have fun!
       </p>
+      <p>
+         <a href="RawWrite.zip">RawWrite for Windows</a>: The revival of chrysocome's RawWrite!
+      </p>
    </body>
 </html>
