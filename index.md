@@ -33,7 +33,7 @@
          <a href="RawWrite.zip">RawWrite for Windows</a>: The revival of chrysocome's RawWrite!
       </p>
       <p>
-         <a href="sfbuild.exe">Stockfish Builder</a>:Use this impossibly small builder to build Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
+         <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
       </p>
    </body>
 </html>
