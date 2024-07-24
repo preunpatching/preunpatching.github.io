@@ -35,5 +35,14 @@
       <p>
          <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
       </p>
+      <p>
+         <a href="/Suno AI Misc.zip">Suno AI Misc</a>: Some miscellaneous Suno AI songs that I edited using <a href="https://www.audacityteam.org/">Audacity</a>.
+      </p>
+      <p>
+        The Universal Declaration of Human Rights Song: A short Suno AI album edited with <a href="https://www.audacityteam.org/">Audacity</a>. Because GitHub doesn't let me to put files that are larger than 25MB, I'll put <a href="/The Universal Declaration of Human Rights Song 1.zip">part 1</a> and <a href="/The Universal Declaration of Human Rights Song 2.zip">part 2</a> links here.
+      </p>
+      <p>
+        <a href="/Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using<a href="https://www.audacityteam.org/">Audacity</a>.
+      </p>
    </body>
 </html>
