@@ -42,7 +42,7 @@
         The Universal Declaration of Human Rights Song: A short Suno AI album edited with <a href="https://www.audacityteam.org/">Audacity</a>. Because GitHub doesn't let me to put files that are larger than 25MB, I'll put <a href="/The Universal Declaration of Human Rights Song 1.zip">part 1</a> and <a href="/The Universal Declaration of Human Rights Song 2.zip">part 2</a> links here.
       </p>
       <p>
-        <a href="/Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using<a href="https://www.audacityteam.org/">Audacity</a>.
+        <a href="/Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using <a href="https://www.audacityteam.org/">Audacity</a>.
       </p>
    </body>
 </html>
