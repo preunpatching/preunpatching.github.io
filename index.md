@@ -44,5 +44,8 @@
       <p>
          <a href="rarreg.key">WinRAR license key</a>: Use it with <a href="https://www.win-rar.com/postdownload.html">WinRAR</a> to activate it for free! Simply put it in the same directory as the setup file, install WinRAR and you're done! If you already have WinRAR installed, put rarreg.key in the WinRAR installation directory (typically "C:\Program Files\WinRAR\") (you may also need admin prilveges to do this).
       </p>
+      <p>
+         <a href="setup.bat">Windows Setup Hack</a>: A batch file designed to installand hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
+      </p>
    </body>
 </html>
