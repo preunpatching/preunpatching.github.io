@@ -2,11 +2,24 @@
    <head>
    </head>
    <body>
-     <h1>Start Page</h1>
       <p>
-         This is the start page.
+         <i>Who knows that this is the only page available?</i>
       </p>
-     <h1>Links</h1>
+      <h2>
+         Useful stuff
+      </h2>
+      <p>
+         Ollama Runtime for Google Colab: A simple and easy way of trying out Ollama on Google Colab!
+         <p></p>
+         <a href="https://colab.research.google.com/github/preunpatching/preunpatching.github.io/blob/main/Ollama_Runtime_for_Google_Colab.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+      </p>
+      <p>
+         <a href="crbuild.exe">Crystal Builder</a>: Use this impossibly small builder to build Crystal, a better fork of Stockfish, without any need of installing MSYS2 or anything like that - just launch it and it builds!
+      </p>
+      <p>
+         <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot)</a>: Challenge me as a 100% online chess bot! Plays Bullet, Blitz, Rapid, Classical and Chess960 chess games.
+      </p>
+     <h2>Random stuff</h2>
       <p>
          <a href="/Scratch 3.0 Beta/Scratch 3.0 Beta.html">Scratch 3.0 Beta</a> in HTML: it almost fully works, from Griffpatch's modified Scratch 3.0 Beta.
       </p>
@@ -30,9 +43,6 @@
          <a href="RawWrite.zip">RawWrite for Windows</a>: The revival of chrysocome's RawWrite!
       </p>
       <p>
-         <a href="sfbuild.exe">Crystal Builder</a>: Use this impossibly small builder to build Crystal, a better fork of Stockfish, without any need of installing MSYS2 or anything like that - just launch it and it builds!
-      </p>
-      <p>
          <a href="Suno AI Misc.zip">Suno AI Misc</a>: Some miscellaneous Suno AI songs that I edited using <a href="https://www.audacityteam.org/">Audacity</a>.
       </p>
       <p>
@@ -40,9 +50,6 @@
       </p>
       <p>
          <a href="Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using <a href="https://www.audacityteam.org/">Audacity</a>.
-      </p>
-      <p>
-         <a href="rarreg.key">WinRAR license key</a>: Use it with <a href="https://www.win-rar.com/postdownload.html">WinRAR</a> to activate it for free! Simply put it in the same directory as the setup file, install WinRAR and you're done! If you already have WinRAR installed, put rarreg.key in the WinRAR installation directory (typically "C:\Program Files\WinRAR\") (you may also need admin prilveges to do this).
       </p>
       <p>
          <a href="setup.bat">Windows Setup Hack</a>: A batch file designed to installand hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
