@@ -9,7 +9,7 @@
          Useful stuff
       </h2>
       <p>
-         Ollama Runtime for Kaggle</a>: A simple and easy way of trying out Ollama on Kaggle!
+         Ollama Runtime for Kaggle: A simple and easy way of trying out Ollama on Kaggle!
       <p></p>
       <a href="https://www.kaggle.com/code/preunpatching/ollama-runtime-for-kaggle" target="_parent"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"/></a>
       <p></p>
