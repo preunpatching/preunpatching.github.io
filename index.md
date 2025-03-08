@@ -9,7 +9,9 @@
          Useful stuff
       </h2>
       <p>
-         Ollama Runtime for Google Colab: A simple and easy way of trying out Ollama on Google Colab!
+         <a href="https://colab.research.google.com/github/preunpatching/preunpatching.github.io/blob/main/Ollama_Runtime_for_Google_Colab.ipynb">Ollama Runtime for Kaggle</a>: A simple and easy way of trying out Ollama on Kaggle!
+         <p></p>
+         We also have the legacy Google Colab version of the notebook, however it is not recommended since the free hardware you can use is more limited.
          <p></p>
          <a href="https://colab.research.google.com/github/preunpatching/preunpatching.github.io/blob/main/Ollama_Runtime_for_Google_Colab.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
       </p>
