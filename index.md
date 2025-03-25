@@ -18,7 +18,7 @@
          <a href="https://colab.research.google.com/github/preunpatching/preunpatching.github.io/blob/main/Ollama_Runtime_for_Google_Colab.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
       </p>
       <p>
-         <a href="crbuild.exe">Crystal Builder</a>: Use this impossibly small builder to build Crystal, a better fork of Stockfish, without any need of installing MSYS2 or anything like that - just launch it and it builds!
+         <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build the latest development build of Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
       </p>
       <p>
          <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot)</a>: Challenge me as a 100% online chess bot! Plays Bullet, Blitz, Rapid, Classical and Chess960 chess games.
