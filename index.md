@@ -9,6 +9,9 @@
          Useful stuff
       </h2>
       <p>
+         <a href="https://github.com/preunpatching/winsetup-batch/">Windows Setup Batch Script</a>: A batch file designed to install and hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
+      </p>
+      <p>
          Ollama Runtime for Kaggle: A simple and easy way of trying out Ollama on Kaggle!
       <p></p>
       <a href="https://www.kaggle.com/code/preunpatching/ollama-runtime-for-kaggle" target="_parent"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"/></a>
@@ -54,9 +57,6 @@
       </p>
       <p>
          <a href="Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using <a href="https://www.audacityteam.org/">Audacity</a>.
-      </p>
-      <p>
-         <a href="setup.bat">Windows Setup Hack</a>: A batch file designed to installand hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
       </p>
    </body>
 </html>
