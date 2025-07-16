@@ -9,7 +9,7 @@
          Useful stuff
       </h2>
       <p>
-         <a href="https://github.com/preunpatching/winsetup-batch/">Windows Setup Batch Script</a>: A batch file designed to install and hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
+         <a href="https://github.com/preunpatching/winsetup-rebooted/">Windows Setup Rebooted</a>: A batch file designed to install and hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
       </p>
       <p>
          Ollama Runtime for Kaggle: A simple and easy way of trying out Ollama on Kaggle!
