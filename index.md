@@ -3,7 +3,7 @@
    </head>
    <body>
       <p>
-         <i>Who knows that this is the only page available?</i>
+         <i>Who would think that this is not the only page available?</i>
       </p>
       <h2>
          Useful stuff
@@ -24,7 +24,7 @@
          <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build the latest development build of Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
       </p>
       <p>
-         <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot)</a>: Challenge me as a 100% online chess bot! Plays Bullet, Blitz, Rapid, Classical and Chess960 chess games.
+         <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot)</a>: Challenge me as a chess bot powered by Chess.com's Torch v2 engine! Plays Bullet, Blitz, Rapid and Chess960 chess games.
       </p>
      <h2>Random stuff</h2>
       <p>
@@ -57,6 +57,12 @@
       </p>
       <p>
          <a href="Yandere Simulator (source code music).zip">Yandere Simulator (source code music)</a>: A very short and funny Suno AI album which was edited using <a href="https://www.audacityteam.org/">Audacity</a>.
+      </p>
+      <p>
+         <a href="markov-ai.zip">Markov AI</a>: A Python script that uses the Markov chain to predict text. Includes some corpuses for you to train because the models are huge, but they don't take much CPU power to train and run the models, and is mostly I/O / RAM limited.
+      </p>
+      <p>
+         <a href="aichess.zip">AI Chess</a>: A Python script that you can use to play chess against LM Studio LLMs or Google AI models.
       </p>
    </body>
 </html>
