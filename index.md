@@ -64,5 +64,8 @@
       <p>
          <a href="aichess.zip">AI Chess</a>: A Python script that you can use to play chess against LM Studio LLMs or Google AI models.
       </p>
+      <p>
+         <a href="Chambered3D.html">Chambered 3D</a>: A modified version of <a href="https://minecraft.wiki/w/Minecraft_4k">Minecraft 4k</a> with actual camera control and optimizations!
+      </p>
    </body>
 </html>
