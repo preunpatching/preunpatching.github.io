@@ -1,8 +1,12 @@
-from tkinter import filedialog
+try:
+    from tkinter import filedialog
+    tkinter_available = True
+except ImportError:
+    tkinter_available = False
+import sys, argparse, threading
 from time import time, sleep
-import sys
-from random import randrange
-import argparse
+from random import random
+from os.path import exists
 
 # --- ROM DATA ---
 # Wozmon ($FF00 - $FFFF)
@@ -12,7 +16,7 @@ WOZMON_DATA = b"\xd8X\xa0\x7f\x8c\x12\xd0\xa9\xa7\x8d\x11\xd0\x8d\x13\xd0\xc9\xd
 # Reads or writes a cassette port once, then returns.
 ACI_DATA = b"\xa9\xaa \xef\xff\xa9\x8d \xef\xff\xa0\xff\xc8\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x9b\xf0\xe1\xc9\x8d\xd0\xe9\xa2\xff\xa9\x00\x85$\x85%\x85&\x85'\xe8\xbd\x00\x02\xc9\xd2\xf09\xc9\xd7\xf0;\xc9\xae\xf0'\xc9\x8d\xf0 \xc9\xa0\xf0\xe8I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\xad\n\n\n\n\xa0\x04\n&$&%\x88\xd0\xf8\xf0\xccL\x1a\xff\xa5$\x85&\xa5%\x85'\xb0\xbf\xad\x81\xc0L\x1a\xff\x8d(\xc0L\x1a\xff"
 
-# --- 6502 CPU CORE (MPU derived from Py65 emulator) ---
+# --- 6502 Microprocessor Unit (Derived from Py65 emulator) ---
 
 class MPU:
     # vectors
@@ -1314,7 +1318,7 @@ class MemoryBus:
 # --- SYSTEM EMULATOR ---
 
 class Apple1System:
-    def __init__(self, display_callback):
+    def __init__(self, display_callback, raw_display, bench):
         self.memory = bytearray(65536)
         
         # Initialize Memory Wrapper for the new CPU
@@ -1325,6 +1329,11 @@ class Apple1System:
         self.cpu = MPU(memory=self.mem_bus, pc=None)
         
         self.display_callback = display_callback
+        self.raw_display = raw_display
+        self.char_in_line = 0
+        self.reset_terminal = setup_console(self)
+        self.bench = bench
+        self.terminated = False
         
         # PIA State
         self.kbd = 0x00
@@ -1339,14 +1348,6 @@ class Apple1System:
         # Load Wozmon
         for i, b in enumerate(WOZMON_DATA):
             self.memory[0xFF00 + i] = b
-            
-        # Vectors
-        self.memory[0xFFFA] = 0x00 # NMI
-        self.memory[0xFFFB] = 0x00
-        self.memory[0xFFFC] = 0x00 # Reset Lo
-        self.memory[0xFFFD] = 0xFF # Reset Hi -> FF00
-        self.memory[0xFFFE] = 0x00 # IRQ
-        self.memory[0xFFFF] = 0x00
 
         # Load ACI
         for i, b in enumerate(ACI_DATA):
@@ -1364,7 +1365,7 @@ class Apple1System:
             
         # PIA Display
         elif addr == 0xD012:
-            return randrange(256)
+            return 0x80 if random() > 0.5 else 0x00
         elif addr == 0xD013:
             return self.dspcr # Bit 7 is ready status (always 1 here)
             
@@ -1373,8 +1374,10 @@ class Apple1System:
             # Wozmon stores destination address at $24,$25
             dest_addr = self.memory[0x24] | (self.memory[0x25] << 8)
             
-            # Note: filedialog will open a GUI window, which might pause execution
-            file_path = filedialog.askopenfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
+            if tkinter_available:
+                file_path = filedialog.askopenfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
+            else:
+                file_path = input('Input a binary file to load: ')
             if file_path:
                 try:
                     with open(file_path, "rb") as f:
@@ -1393,13 +1396,9 @@ class Apple1System:
         # PIA Display
         if addr == 0xD012:
             if self.dspcr != 0x00:
-                self.display_callback(value)
+                self.display_callback(self, value, self.raw_display)
             if self.dspcr == 0x00 and value == 0x7f:
                 self.dspcr = 0x80
-            return
-            
-        if 0x0000 <= addr < 0x8000: # RAM (extended for convenience)
-            self.memory[addr] = value
         
         # ACI Save Trigger
         elif addr == 0xC028:
@@ -1408,115 +1407,155 @@ class Apple1System:
             
             # Ensure the end is after the start
             if end_addr >= start_addr:
-                file_path = filedialog.asksaveasfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
+                if tkinter_available:
+                    file_path = filedialog.asksaveasfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
+                else:
+                    file_path = input('Input a binary file to save: ')
                 if file_path:
                     try:
                         with open(file_path, "wb") as f: f.write(self.memory[start_addr:end_addr + 1])
                         print(f"Saved {end_addr - start_addr + 1} bytes to {file_path}")
                     except Exception as e:
                         print(f"Save failed: {e}")
-            return
 
-    def key_pressed(self, key_byte):
-        self.kbd = key_byte | 0x80 # Set bit 7
-        self.kbdcr = 0x80          # Set status ready
+        # RAM
+        else:
+            self.memory[addr] = value
+        
+        return
 
-def setup_console():
+    def key_pressed(self, key, bench):
+        if key:
+            ascii_val = int(ord(key).to_bytes().hex(), 16)
+            if (ascii_val > 31 and ascii_val < 96) or ascii_val == 13 or ascii_val == 27:
+                if not bench:
+                    self.kbd = ascii_val | 0x80
+                    self.kbdcr = 0x80
+            elif ascii_val == 3: # EOF (Break)
+                raise KeyboardInterrupt
+            elif ascii_val == 8: # Backspace
+                if not bench:
+                    self.kbd = 0x5f | 0x80
+                    self.kbdcr = 0x80
+            elif ascii_val == 9: # Tab
+                if not bench:
+                    self.reset()
+                    self.dspcr = 0x00
+
+    def terminate(self):
+        self.terminated = True
+
+    # Passthroughs (use these instead of direct MPU functions)
+    def step(self):
+        if self.terminated: raise KeyboardInterrupt
+        self.cpu.step()
+
+    def reset(self):
+        if self.terminated: raise KeyboardInterrupt
+        self.cpu.reset()
+
+def setup_console(system):
     """Sets up the console for raw input depending on the OS."""
     if sys.platform == "win32":
         import msvcrt
         def get_key():
-            if msvcrt.kbhit():
-                # Get the char and convert to Apple 1 expected format
-                char = msvcrt.getch()
-                if char == b'\xe0':
-                    msvcrt.getch()
-                    return None
-                try:
-                    return char.decode().upper()
-                except:
-                    return None
-            return None
-        return get_key
+            try:
+                while True:
+                    if msvcrt.kbhit():
+                        # Get the char and convert to Apple 1 expected format
+                        char = msvcrt.getch()
+                        if char == b'\xe0':
+                            msvcrt.getch()
+                        try:
+                            system.key_pressed(char.decode().upper(), system.bench)
+                        except: pass
+                    sleep(0.0000000001)
+            except KeyboardInterrupt:
+                system.terminate()
+        def reset_terminal():
+            # Not needed on Windows
+            pass
+        threading.Thread(target=get_key, daemon=True).start()
+        return reset_terminal
     else:
         import tty, termios, select
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        tty.setraw(sys.stdin.fileno())
+        old_settings = tty.setraw(sys.stdin.fileno())
         def get_key():
-            if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
-                return sys.stdin.read(1).upper()
-            return None
-        return get_key
+            try:
+                while True:
+                    if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
+                        system.key_pressed(sys.stdin.read(1).upper(), system.bench)
+                    sleep(0.0000000001)
+            except KeyboardInterrupt:
+                system.terminate()
+        def reset_terminal():
+            # Restore terminal settings on exit
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_settings)
+        threading.Thread(target=get_key, daemon=True).start()
+        return reset_terminal
 
-def console_display(char):
+def console_display(self, char, raw_display):
     """Translates Apple 1 character codes to the system console."""
     char = char & 0x7F
     if char == 0x0D:
-        sys.stdout.write("\n")
+        sys.stdout.write("\r\n")
         sys.stdout.flush()
+        self.char_in_line = 0
     elif char > 0x1F:
         # Signetics 2513 character set
         charset = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
         sys.stdout.write(charset[char])  
         sys.stdout.flush()
+        self.char_in_line += 1
+        if self.char_in_line >= 40 and not raw_display:
+            sys.stdout.write("\r\n")
+            sys.stdout.flush()
+            self.char_in_line = 0
 
-def null_display(char):
+def null_display(self, char, raw_display):
     """A null display."""
     pass
 
 def apple1_emulator(args):
     """Main program."""
-    turbo = args.turbo # Turbo mode (will allow maximum speed, which is usually ~30-50 kinst/s, or ~60-350 KHz, depending on single-core performance)
+    turbo = args.turbo # Turbo mode (will allow maximum speed)
     bench = args.bench # Benchmark mode (will disable display and keyboard, while displaying emulated CPU speed in kinst/s)
-    system = Apple1System(null_display) if bench else Apple1System(console_display)
-    get_key = setup_console()
+    raw_display = args.raw_display # Raw display mode (will not simulate a 40-column display)
+    system = Apple1System(null_display, raw_display, bench) if bench else Apple1System(console_display, raw_display, bench)
     
     # Initialize CPU (Reset vector loaded automatically by MPU class via MemoryBus)
-    system.cpu.reset()
+    system.reset()
     if bench:
         start = time()
         count = 0
     
     try:
         while True:
-            # Read keyboard (quite a performance bottleneck, but improvements are yet to come)
-            # If it weren't for this bottleneck, the speed would be about ~1 Minst/s, or ~2-7 MHz
-            key = get_key()
-            if key:
-                ascii_val = int(ord(key).to_bytes().hex(), 16)
-                if (ascii_val > 31 and ascii_val < 96) or ascii_val == 13 or ascii_val == 27:
-                    if not bench: system.key_pressed(ascii_val)
-                elif ascii_val == 8: # Backspace
-                    if not bench: system.key_pressed(0x7F)
-                elif ascii_val == 9: # Tab
-                    if not bench:
-                        system.cpu.reset()
-                        system.dspcr = 0x00
-            
             # Execute one instruction (2-7 cycles)
-            system.cpu.step()
+            # The maximum speed is ~500-1500 kinst/s, or ~1-10 MHz, depending on single-core performance
+            system.step()
             
-            # Non-turbo mode (will limit to 1/25th maximum speed)
+            # Non-turbo mode (will limit maximum speed, usually to a few KHz, which is normally enough for most Apple-1 software)
             if not turbo: sleep(0.0000000001)
 
             if bench:
                 count += 1
                 if time() - start >= 1:
-                    print(count / 1000)
+                    print(count / 1000, end='\r\n')
                     start = time()
                     count = 0
             
     except KeyboardInterrupt:
+        system.reset_terminal()
         pass
-    finally:
-        if sys.platform != "win32":
-            # Restore terminal settings on exit
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
+    except Exception:
+        system.reset_terminal()
+        raise
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="An Apple-1 emulator based on the MOS 6502 microprocessor.")
+    parser = argparse.ArgumentParser(description="An Apple-1 emulator based on the MOS 6502 microprocessor unit.")
     parser.add_argument('-t', '--turbo', action='store_true', help='run CPU at full speed')
     parser.add_argument('-b', '--bench', action='store_true', help='test maximum CPU speed')
+    parser.add_argument('-r', '--raw-display', action='store_true', help='do not simulate a 40-column display')
     args = parser.parse_args()
     apple1_emulator(args)
