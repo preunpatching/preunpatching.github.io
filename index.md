@@ -3,16 +3,26 @@
    </head>
    <body>
       <p>
-         <i>Who would think that this is not the only page available?</i>
+         <i>Everything is going on... including you</i>
       </p>
       <h2>
-         Useful stuff
+         Some useful-ish stuff
       </h2>
       <p>
-         <a href="https://github.com/preunpatching/winsetup-rebooted/">Windows Setup Rebooted</a>: A batch file designed to install and hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
+         <a href="/cheerpx-vm">CheerpX Virtual Machine</a> <a href="https://github.com/preunpatching/cheerpx-vm">(repo)</a>: It's WebVM, <i>but better</i>! Includes various tools and utilities on Alpine Linux.
       </p>
       <p>
-         Ollama Runtime for Kaggle: A simple and easy way of trying out Ollama on Kaggle!
+         <a href="https://github.com/preunpatching/winsetup-rebooted/">Windows Setup Rebooted</a>: A Python-based GUI designed to install and hack into Windows and disable the OOBE, the telemetry screen, and even Microsoft!
+      </p>
+      <p>
+         <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build the latest development build of Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
+      </p>
+     <h2>Random stuff</h2>
+      <p>
+         <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot) (inactive)</a>: Challenge me as a chess bot powered by Chess.com's Torch v2 engine! Plays Bullet, Blitz, Rapid and Chess960 chess games.
+      </p>
+      <p>
+         Ollama Runtime for Kaggle (outdated): A simple and easy way of trying out Ollama on Kaggle!
       <p></p>
       <a href="https://www.kaggle.com/code/preunpatching/ollama-runtime-for-kaggle" target="_parent"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"/></a>
       <p></p>
@@ -20,13 +30,6 @@
          <p></p>
          <a href="https://colab.research.google.com/github/preunpatching/preunpatching.github.io/blob/main/Ollama_Runtime_for_Google_Colab.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
       </p>
-      <p>
-         <a href="sfbuild.exe">Stockfish Builder</a>: Use this impossibly small builder to build the latest development build of Stockfish without any need of installing MSYS2 or anything like that - just launch it and it builds!
-      </p>
-      <p>
-         <a href="https://lichess.org/@/preunpatching-bot">Lichess Bot (preunpatching-bot)</a>: Challenge me as a chess bot powered by Chess.com's Torch v2 engine! Plays Bullet, Blitz, Rapid and Chess960 chess games.
-      </p>
-     <h2>Random stuff</h2>
       <p>
          <a href="/Scratch 3.0 Beta/Scratch 3.0 Beta.html">Scratch 3.0 Beta</a> in HTML: it almost fully works, from Griffpatch's modified Scratch 3.0 Beta.
       </p>
