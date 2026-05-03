@@ -3,22 +3,113 @@ try:
     tkinter_available = True
 except ImportError:
     tkinter_available = False
+try:
+    from requests import Session
+    requests_available = True
+except ImportError:
+    requests_available = False
 import sys, argparse, threading
+from collections import deque
 from time import time, sleep
 from random import random
 from os.path import exists
 
-# --- ROM DATA ---
-# Wozmon ($FF00 - $FFFF)
-WOZMON_DATA = b"\xd8X\xa0\x7f\x8c\x12\xd0\xa9\xa7\x8d\x11\xd0\x8d\x13\xd0\xc9\xdf\xf0\x13\xc9\x9b\xf0\x03\xc8\x10\x0f\xa9\xdc \xef\xff\xa9\x8d \xef\xff\xa0\x01\x880\xf6\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x8d\xd0\xd4\xa0\xff\xa9\x00\xaa\n\x85+\xc8\xb9\x00\x02\xc9\x8d\xf0\xd4\xc9\xae\x90\xf4\xf0\xf0\xc9\xba\xf0\xeb\xc9\xd2\xf0;\x86(\x86)\x84*\xb9\x00\x02I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\x11\n\n\n\n\xa2\x04\n&(&)\xca\xd0\xf8\xc8\xd0\xe0\xc4*\xf0\x97$+P\x10\xa5(\x81&\xe6&\xd0\xb5\xe6'LD\xffl$\x000+\xa2\x02\xb5'\x95%\x95#\xca\xd0\xf7\xd0\x14\xa9\x8d \xef\xff\xa5% \xdc\xff\xa5$ \xdc\xff\xa9\xba \xef\xff\xa9\xa0 \xef\xff\xa1$ \xdc\xff\x86+\xa5$\xc5(\xa5%\xe5)\xb0\xc1\xe6$\xd0\x02\xe6%\xa5$)\x07\x10\xc8HJJJJ \xe5\xffh)\x0f\t\xb0\xc9\xba\x90\x02i\x06,\x12\xd00\xfb\x8d\x12\xd0`\x00\x00\x00\x0f\x00\xff\x00\x00"
+# --- ROM Data ---
+# Wozmon ($FF00 - $FFF9)
+WOZMON_DATA = b"\xd8X\xa0\x7f\x8c\x12\xd0\xa9\xa7\x8d\x11\xd0\x8d\x13\xd0\xc9\xdf\xf0\x13\xc9\x9b\xf0\x03\xc8\x10\x0f\xa9\xdc \xef\xff\xa9\x8d \xef\xff\xa0\x01\x880\xf6\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x8d\xd0\xd4\xa0\xff\xa9\x00\xaa\n\x85+\xc8\xb9\x00\x02\xc9\x8d\xf0\xd4\xc9\xae\x90\xf4\xf0\xf0\xc9\xba\xf0\xeb\xc9\xd2\xf0;\x86(\x86)\x84*\xb9\x00\x02I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\x11\n\n\n\n\xa2\x04\n&(&)\xca\xd0\xf8\xc8\xd0\xe0\xc4*\xf0\x97$+P\x10\xa5(\x81&\xe6&\xd0\xb5\xe6'LD\xffl$\x000+\xa2\x02\xb5'\x95%\x95#\xca\xd0\xf7\xd0\x14\xa9\x8d \xef\xff\xa5% \xdc\xff\xa5$ \xdc\xff\xa9\xba \xef\xff\xa9\xa0 \xef\xff\xa1$ \xdc\xff\x86+\xa5$\xc5(\xa5%\xe5)\xb0\xc1\xe6$\xd0\x02\xe6%\xa5$)\x07\x10\xc8HJJJJ \xe5\xffh)\x0f\t\xb0\xc9\xba\x90\x02i\x06,\x12\xd00\xfb\x8d\x12\xd0`\x00\x00"
 
 # Modified Apple Cassette Interface ($C100 - $C17B)
 # Reads or writes a cassette port once, then returns.
 ACI_DATA = b"\xa9\xaa \xef\xff\xa9\x8d \xef\xff\xa0\xff\xc8\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x9b\xf0\xe1\xc9\x8d\xd0\xe9\xa2\xff\xa9\x00\x85$\x85%\x85&\x85'\xe8\xbd\x00\x02\xc9\xd2\xf09\xc9\xd7\xf0;\xc9\xae\xf0'\xc9\x8d\xf0 \xc9\xa0\xf0\xe8I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\xad\n\n\n\n\xa0\x04\n&$&%\x88\xd0\xf8\xf0\xccL\x1a\xff\xa5$\x85&\xa5%\x85'\xb0\xbf\xad\x81\xc0L\x1a\xff\x8d(\xc0L\x1a\xff"
 
+# Network Interface ($C100 - $C1B1)
+NET_DATA = b" ^\xc1\xa2\x00\xad\x11\xd0\x10\xfb\xad\x10\xd0\xc9\xdf\xf0\x0e\xc9\x8d\xf0\x15\xe0\xc8\xf0\xec \xef\xff)\x7f\x950\xe8\xd0\xe2\xe0\x00\xf0\xde\xca \xef\xffL\x05\xc1 \xef\xff\xa9\x00\x950\xa2\x00\xb50\xf0\x06\x8d\x16\xd0\xe8\xd0\xf6\xa9\x7f\x8d\x16\xd0\xad\x15\xd0\x10\xfb\xad\x14\xd0\xc9\x03\xf0\xb2\xc9\x7f\xf0\x17\t\x80 \xef\xffLF\xc1\xa9\x8d \xef\xff\xa9\xbe \xef\xff\xa9\xa0L\xef\xff \xa9\xc1\x85\x00 \xa9\xc1\x85\x01\xaa \xa9\xc1\x85\x02 \xa9\xc1\x85\x03\xa0\x00\xa5\x02\x05\x03\xf0\x1a \xa9\xc1\x91\x00\xc8\xd0\x02\xe6\x01\xc6\x02\xa5\x02\xc9\xff\xd0\x02\xc6\x03\xa5\x02\x05\x03\xd0\xe6\x86\x01l\x00\x00\xad\x15\xd0\x10\xfb\xad\x14\xd0`"
+"""
+$c100  20 5e c1  JSR $c15e
+$c103  a2 00     LDX #$00
+$c105  ad 11 d0  LDA $d011
+$c108  10 fb     BPL $c105
+$c10a  ad 10 d0  LDA $d010
+$c10d  c9 df     CMP #$df
+$c10f  f0 0e     BEQ $c11f
+$c111  c9 8d     CMP #$8d
+$c113  f0 15     BEQ $c12a
+$c115  e0 c8     CPX #$c8
+$c117  f0 ec     BEQ $c105
+$c119  20 ef ff  JSR $ffef
+$c11c  29 7f     AND #$7f
+$c11e  95 30     STA $30,X
+$c120  e8        INX
+$c121  d0 e2     BNE $c105
+$c123  e0 00     CPX #$00
+$c125  f0 de     BEQ $c105
+$c127  ca        DEX
+$c128  20 ef ff  JSR $ffef
+$c12b  4c 05 c1  JMP $c105
+$c12e  20 ef ff  JSR $ffef
+$c131  a9 00     LDA #$00
+$c133  95 30     STA $30,X
+$c135  a2 00     LDX #$00
+$c137  b5 30     LDA $30,X
+$c139  f0 06     BEQ $c141
+$c13b  8d 16 d0  STA $d016
+$c13e  e8        INX
+$c13f  d0 f6     BNE $c137
+$c141  a9 7f     LDA #$7f
+$c143  8d 16 d0  STA $d016
+$c146  ad 15 d0  LDA $d015
+$c149  10 fb     BPL $c146
+$c14b  ad 14 d0  LDA $d014
+$c14e  c9 03     CMP #$03
+$c150  f0 b2     BEQ $c104
+$c152  c9 7f     CMP #$7f
+$c154  f0 17     BEQ $c16d
+$c156  09 80     ORA #$80
+$c158  20 ef ff  JSR $ffef
+$c15b  4c 46 c1  JMP $c146
+$c15e  a9 8d     LDA #$8d
+$c160  20 ef ff  JSR $ffef
+$c163  a9 be     LDA #$be
+$c165  20 ef ff  JSR $ffef
+$c168  a9 a0     LDA #$a0
+$c16a  4c ef ff  JMP $ffef
+$c16d  20 a9 c1  JSR $c1a9
+$c170  85 00     STA $00
+$c172  20 a9 c1  JSR $c1a9
+$c175  85 01     STA $01
+$c177  aa        TAX
+$c178  20 a9 c1  JSR $c1a9
+$c17b  85 02     STA $02
+$c17d  20 a9 c1  JSR $c1a9
+$c180  85 03     STA $03
+$c182  a0 00     LDY #$00
+$c184  a5 02     LDA $02
+$c186  05 03     ORA $03
+$c188  f0 1a     BEQ $c1a4
+$c18a  20 a9 c1  JSR $c1a9
+$c18d  91 00     STA ($00),Y
+$c18f  c8        INY
+$c190  d0 02     BNE $c194
+$c192  e6 01     INC $01
+$c194  c6 02     DEC $02
+$c196  a5 02     LDA $02
+$c198  c9 ff     CMP #$ff
+$c19a  d0 02     BNE $c19e
+$c19c  c6 03     DEC $03
+$c19e  a5 02     LDA $02
+$c1a0  05 03     ORA $03
+$c1a2  d0 e6     BNE $c18a
+$c1a4  86 01     STX $01
+$c1a6  6c 00 00  JMP ($0000)
+$c1a9  ad 15 d0  LDA $d015
+$c1ac  10 fb     BPL $c1a9
+$c1ae  ad 14 d0  LDA $d014
+$c1b1  60        RTS
+"""
+
 # --- 6502 Microprocessor Unit (Derived from Py65 emulator) ---
 
-class MPU:
+class MPU6502:
     # vectors
     RESET = 0xfffc
     NMI = 0xfffa
@@ -53,7 +144,7 @@ class MPU:
         self.processorCycles = 0
 
         if memory is None:
-            memory = bytearray(65536)
+            memory = 0x10000 * [0x00]
         self.memory = memory
         self.start_pc = pc # if None, reset vector is used
 
@@ -1294,7 +1385,308 @@ class MPU:
         self.opINCR(self.AbsoluteXAddr)
         self.pc += 2
 
-# --- MEMORY BUS ADAPTER ---
+class MPU65C02(MPU6502):
+    def __init__(self, *args, **kwargs):
+        MPU6502.__init__(self, *args, **kwargs)
+        self.name = '65C02'
+        self.waiting = False
+
+    def step(self):
+        if self.waiting:
+            self.processorCycles += 1
+        else:
+            MPU6502.step(self)
+        return self
+
+    # Make copies of the lists
+    instruct = MPU6502.instruct[:]
+    cycletime = MPU6502.cycletime[:]
+    extracycles = MPU6502.extracycles[:]
+    disassemble = MPU6502.disassemble[:]
+
+    instruction = MPU6502.make_instruction_decorator(instruct, disassemble,
+                                             cycletime, extracycles)
+
+    # addressing modes
+
+    def ZeroPageIndirectAddr(self):
+        return self.WordAt(255 & (self.ByteAt(self.pc)))
+
+    def IndirectAbsXAddr(self):
+        return (self.WordAt(self.pc) + self.x) & self.addrMask
+
+    # operations
+
+    def opRMB(self, x, mask):
+        address = x()
+        self.memory[address] &= mask
+
+    def opSMB(self, x, mask):
+        address = x()
+        self.memory[address] |= mask
+
+    def opSTZ(self, x):
+        self.memory[x()] = 0x00
+
+    def opTSB(self, x):
+        address = x()
+        m = self.memory[address]
+        self.p &= ~self.ZERO
+        z = m & self.a
+        if z == 0:
+            self.p |= self.ZERO
+        self.memory[address] = m | self.a
+
+    def opTRB(self, x):
+        address = x()
+        m = self.memory[address]
+        self.p &= ~self.ZERO
+        z = m & self.a
+        if z == 0:
+            self.p |= self.ZERO
+        self.memory[address] = m & ~self.a
+
+    # instructions
+
+    @instruction(name="BRK", mode="imp", cycles=7)
+    def inst_0x00(self):
+        # pc has already been increased one
+        pc = (self.pc + 1) & self.addrMask
+        self.stPushWord(pc)
+
+        self.p |= self.BREAK
+        self.stPush(self.p | self.BREAK | self.UNUSED)
+
+        self.p |= self.INTERRUPT
+        self.pc = self.WordAt(self.IRQ)
+
+        # 65C02 clears decimal flag, NMOS 6502 does not
+        self.p &= ~self.DECIMAL
+
+    @instruction(name="TSB", mode="zpg", cycles=5)
+    def inst_0x04(self):
+        self.opTSB(self.ZeroPageAddr)
+        self.pc += 1
+
+    @instruction(name="RMB0", mode="zpg", cycles=5)
+    def inst_0x07(self):
+        self.opRMB(self.ZeroPageAddr, 0xFE)
+        self.pc += 1
+
+    @instruction(name="TSB", mode="abs", cycles=6)
+    def inst_0x0c(self):
+        self.opTSB(self.AbsoluteAddr)
+        self.pc += 2
+
+    @instruction(name="ORA", mode="zpi", cycles=5)
+    def inst_0x12(self):
+        self.opORA(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="TRB", mode="zpg", cycles=5)
+    def inst_0x14(self):
+        self.opTRB(self.ZeroPageAddr)
+        self.pc += 1
+
+    @instruction(name="RMB1", mode="zpg", cycles=5)
+    def inst_0x17(self):
+        self.opRMB(self.ZeroPageAddr, 0xFD)
+        self.pc += 1
+
+    @instruction(name="INC", mode="acc", cycles=2)
+    def inst_0x1a(self):
+        self.opINCR(None)
+
+    @instruction(name="TRB", mode="abs", cycles=6)
+    def inst_0x1c(self):
+        self.opTRB(self.AbsoluteAddr)
+        self.pc += 2
+
+    @instruction(name="RMB2", mode="zpg", cycles=5)
+    def inst_0x27(self):
+        self.opRMB(self.ZeroPageAddr, 0xFB)
+        self.pc += 1
+
+    @instruction(name="AND", mode="zpi", cycles=5)
+    def inst_0x32(self):
+        self.opAND(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="BIT", mode="zpx", cycles=4)
+    def inst_0x34(self):
+        self.opBIT(self.ZeroPageXAddr)
+        self.pc += 1
+
+    @instruction(name="RMB3", mode="zpg", cycles=5)
+    def inst_0x37(self):
+        self.opRMB(self.ZeroPageAddr, 0xF7)
+        self.pc += 1
+
+    @instruction(name="DEC", mode="acc", cycles=2)
+    def inst_0x3a(self):
+        self.opDECR(None)
+
+    @instruction(name="BIT", mode="abx", cycles=4)
+    def inst_0x3c(self):
+        self.opBIT(self.AbsoluteXAddr)
+        self.pc += 2
+
+    @instruction(name="RMB4", mode="zpg", cycles=5)
+    def inst_0x47(self):
+        self.opRMB(self.ZeroPageAddr, 0xEF)
+        self.pc += 1
+
+    @instruction(name="EOR", mode="zpi", cycles=5)
+    def inst_0x52(self):
+        self.opEOR(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="RMB5", mode="zpg", cycles=5)
+    def inst_0x57(self):
+        self.opRMB(self.ZeroPageAddr, 0xDF)
+        self.pc += 1
+
+    @instruction(name="PHY", mode="imp", cycles=3)
+    def inst_0x5a(self):
+        self.stPush(self.y)
+
+    @instruction(name="STZ", mode="zpg", cycles=3)
+    def inst_0x64(self):
+        self.opSTZ(self.ZeroPageAddr)
+        self.pc += 1
+
+    @instruction(name="RMB6", mode="zpg", cycles=5)
+    def inst_0x67(self):
+        self.opRMB(self.ZeroPageAddr, 0xBF)
+        self.pc += 1
+
+    @instruction(name="JMP", mode="ind", cycles=6)
+    def inst_0x6c(self):
+        ta = self.WordAt(self.pc)
+        self.pc = self.WordAt(ta)
+
+    @instruction(name="ADC", mode="zpi", cycles=5)
+    def inst_0x72(self):
+        self.opADC(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="STZ", mode="zpx", cycles=4)
+    def inst_0x74(self):
+        self.opSTZ(self.ZeroPageXAddr)
+        self.pc += 1
+
+    @instruction(name="RMB7", mode="zpg", cycles=5)
+    def inst_0x77(self):
+        self.opRMB(self.ZeroPageAddr, 0x7F)
+        self.pc += 1
+
+    @instruction(name="PLY", mode="imp", cycles=4)
+    def inst_0x7a(self):
+        self.y = self.stPop()
+        self.FlagsNZ(self.y)
+
+    @instruction(name="JMP", mode="iax", cycles=6)
+    def inst_0x7c(self):
+        self.pc = self.WordAt(self.IndirectAbsXAddr())
+
+    @instruction(name="BRA", mode="rel", cycles=1, extracycles=1)
+    def inst_0x80(self):
+        self.BranchRelAddr()
+
+    @instruction(name="SMB0", mode="zpg", cycles=5)
+    def inst_0x87(self):
+        self.opSMB(self.ZeroPageAddr, 0x01)
+        self.pc += 1
+
+    @instruction(name="BIT", mode="imm", cycles=2)
+    def inst_0x89(self):
+        # This instruction (BIT #$12) does not use opBIT because in the
+        # immediate mode, BIT only affects the Z flag.
+        tbyte = self.ImmediateByte()
+        self.p &= ~(self.ZERO)
+        if (self.a & tbyte) == 0:
+            self.p |= self.ZERO
+        self.pc += 1
+
+    @instruction(name="STA", mode="zpi", cycles=5)
+    def inst_0x92(self):
+        self.opSTA(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="SMB1", mode="zpg", cycles=5)
+    def inst_0x97(self):
+        self.opSMB(self.ZeroPageAddr, 0x02)
+        self.pc += 1
+
+    @instruction(name="STZ", mode="abs", cycles=4)
+    def inst_0x9c(self):
+        self.opSTZ(self.AbsoluteAddr)
+        self.pc += 2
+
+    @instruction(name="STZ", mode="abx", cycles=5)
+    def inst_0x9e(self):
+        self.opSTZ(self.AbsoluteXAddr)
+        self.pc += 2
+
+    @instruction(name="SMB2", mode="zpg", cycles=5)
+    def inst_0xa7(self):
+        self.opSMB(self.ZeroPageAddr, 0x04)
+        self.pc += 1
+
+    @instruction(name="LDA", mode="zpi", cycles=5)
+    def inst_0xb2(self):
+        self.opLDA(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="SMB3", mode="zpg", cycles=5)
+    def inst_0xb7(self):
+        self.opSMB(self.ZeroPageAddr, 0x08)
+        self.pc += 1
+
+    @instruction(name="SMB4", mode="zpg", cycles=5)
+    def inst_0xc7(self):
+        self.opSMB(self.ZeroPageAddr, 0x10)
+        self.pc += 1
+
+    @instruction(name="WAI", mode='imp', cycles=3)
+    def inst_0xcb(self):
+        self.waiting = True
+
+    @instruction(name="CMP", mode='zpi', cycles=5)
+    def inst_0xd2(self):
+        self.opCMPR(self.ZeroPageIndirectAddr, self.a)
+        self.pc += 1
+
+    @instruction(name="SMB5", mode="zpg", cycles=5)
+    def inst_0xd7(self):
+        self.opSMB(self.ZeroPageAddr, 0x20)
+        self.pc += 1
+
+    @instruction(name="PHX", mode="imp", cycles=3)
+    def inst_0xda(self):
+        self.stPush(self.x)
+
+    @instruction(name="SMB6", mode="zpg", cycles=5)
+    def inst_0xe7(self):
+        self.opSMB(self.ZeroPageAddr, 0x40)
+        self.pc += 1
+
+    @instruction(name="SBC", mode="zpi", cycles=5)
+    def inst_0xf2(self):
+        self.opSBC(self.ZeroPageIndirectAddr)
+        self.pc += 1
+
+    @instruction(name="SMB7", mode="zpg", cycles=5)
+    def inst_0xf7(self):
+        self.opSMB(self.ZeroPageAddr, 0x80)
+        self.pc += 1
+
+    @instruction(name="PLX", mode="imp", cycles=4)
+    def inst_0xfa(self):
+        self.x = self.stPop()
+        self.FlagsNZ(self.x)
+
+# --- Memory Bus Adapter ---
 
 class MemoryBus:
     """
@@ -1303,11 +1695,11 @@ class MemoryBus:
     """
     def __init__(self, system):
         self.system = system
-        
+
     def __getitem__(self, addr):
         # MPU expects byte at address
         return self.system.read(addr & 0xFFFF)
-        
+
     def __setitem__(self, addr, value):
         # MPU writes byte to address
         self.system.write(addr & 0xFFFF, value)
@@ -1315,69 +1707,120 @@ class MemoryBus:
     def __len__(self):
         return 65536
 
-# --- SYSTEM EMULATOR ---
+# --- Apple-1 System Emulator ---
 
 class Apple1System:
-    def __init__(self, display_callback, raw_display, bench):
+    def __init__(self, mpu, display_callback, raw_display, no_aci, network, fast_display, alt_display, bench):
         self.memory = bytearray(65536)
-        
-        # Initialize Memory Wrapper for the new CPU
+
+        # Hardware
+        self.cpu = mpu
         self.mem_bus = MemoryBus(self)
-        
-        # Initialize the new MPU class with our wrapped memory.
-        # pc=None tells it to look up the reset vector (FFFC) for start address.
-        self.cpu = MPU(memory=self.mem_bus, pc=None)
-        
+
+        # ROM
+        self.wozmon = None
+        self.exp = None
+
+        # Variables
         self.display_callback = display_callback
         self.raw_display = raw_display
+        self.alt_display = alt_display
+        self.no_aci = no_aci
+        self.network = network
+        self.fast_display = fast_display
         self.char_in_line = 0
-        self.reset_terminal = setup_console(self)
+        self.init_terminal, self.reset_terminal = setup_console(self)
         self.bench = bench
         self.terminated = False
-        
-        # PIA State
+        self.dsp_mem = bytearray()
+
+        # PIA
         self.kbd = 0x00
         self.kbdcr = 0x00 # Bit 7 set when key ready
         self.dsp = 0x00
-        self.dspcr = 0x00 # Bit 7 set when display ready (set to 1 when $7F received)
-        
+        self.dspcr = False # True when display ready (set to True when $7F received)
+        self.dsp_clock = 0
+        self.dsp_buffer = deque()
+
+        if self.network:
+            # Networking State
+            self.net_session = Session()
+            self.net_url_buffer = []
+            self.net_response_queue = deque()
+            self.net_busy = False
+
         self.load_roms()
-        self.thread = None
+        self.cpu = self.cpu(memory=self.mem_bus)
+
+    def _network_fetch(self, url):
+        """Internal helper to fetch data in a separate thread."""
+        try:
+            # Fetch the content
+            self.net_response_queue = deque()
+            response = self.net_session.get(url, stream=True)
+
+            for char in response.iter_content():
+                self.net_response_queue.append(ord(char)) 
+        except:
+            pass
+        finally:
+            self.net_response_queue.append(0x03)
+            self.net_busy = False
 
     def load_roms(self):
         # Load Wozmon
-        for i, b in enumerate(WOZMON_DATA):
-            self.memory[0xFF00 + i] = b
+        self.wozmon = WOZMON_DATA
+        self.memory[self.cpu.RESET], self.memory[self.cpu.RESET+1] = 0x00, 0xff
+        self.memory[self.cpu.NMI], self.memory[self.cpu.NMI+1] = 0x00, 0x0f
+        self.memory[self.cpu.IRQ], self.memory[self.cpu.IRQ+1] = 0x00, 0x00
 
-        # Load ACI
-        for i, b in enumerate(ACI_DATA):
-            self.memory[0xC100 + i] = b
+        if not self.no_aci:
+            # Load ACI
+            self.exp = ACI_DATA
+
+        if self.network:
+            # Load Network Interface
+            self.exp = NET_DATA
 
     def read(self, addr):
         # PIA Keyboard
         if addr == 0xD010:
             val = self.kbd
-            self.kbd &= 0x7F # Clear strobe bit in register after read?
+            self.kbd &= 0x7F # Clear strobe bit in register after read
             self.kbdcr = 0x00 # Clear ready flag
             return val
         elif addr == 0xD011:
             return self.kbdcr # Bit 7 is status
-            
+
         # PIA Display
         elif addr == 0xD012:
-            return 0x80 if random() > 0.5 else 0x00
+            if self.fast_display or self.alt_display:
+                return 0x00
+            else:
+                if self.dsp: self.dsp = 0x80 if time() < self.dsp_clock else 0x00
+                return self.dsp
         elif addr == 0xD013:
-            return self.dspcr # Bit 7 is ready status (always 1 here)
-            
+            return 0x00 # Not intended to be read
+
+        # PIA Network
+        elif addr == 0xD014 and self.network:
+            return self.net_response_queue.popleft() if self.net_response_queue else 0x00
+        elif addr == 0xD015 and self.network:
+            return 0x80 if self.net_response_queue else 0x00
+        elif addr == 0xD016 and self.network:
+            return 0x80 if self.net_busy else 0x00
+
         # ACI Load Trigger
-        elif addr == 0xC081:
+        elif addr == 0xC081 and not self.no_aci:
             # Wozmon stores destination address at $24,$25
             dest_addr = self.memory[0x24] | (self.memory[0x25] << 8)
-            
+
             if tkinter_available:
                 file_path = filedialog.askopenfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
             else:
+                self.reset_terminal()
                 file_path = input('Input a binary file to load: ')
+                self.init_terminal()
             if file_path:
                 try:
                     with open(file_path, "rb") as f:
@@ -1390,57 +1833,118 @@ class Apple1System:
                     print(f"Load failed: {e}")
             return 0 # Return dummy value
 
+        elif addr >= 0xC100 and addr <= 0xC1FF and self.exp:
+            return self.exp[addr - 0xC100]
+
+        elif addr >= 0xFF00 and addr <= 0xFFF9 and self.wozmon:
+            return self.wozmon[addr - 0xFF00]
+
         return self.memory[addr]
 
     def write(self, addr, value):
         # PIA Display
         if addr == 0xD012:
-            if self.dspcr != 0x00:
-                self.display_callback(self, value, self.raw_display)
-            if self.dspcr == 0x00 and value == 0x7f:
-                self.dspcr = 0x80
-        
+            if self.dspcr and not self.dsp:
+                if self.alt_display:
+                    self.dsp_buffer.append(value)
+                else:
+                    self.display_callback(self, value, self.raw_display)
+                    if not self.fast_display:
+                        self.dsp = 0x80
+                        self.dsp_clock = time() + 1 / 60.05
+            return
+
+        if addr == 0xD013:
+            self.dspcr = True
+            return
+
+        # PIA Network
+        elif addr == 0xD016 and self.network:
+            if not self.net_busy:
+                if value == 0x7F:
+                    url = "".join(self.net_url_buffer).lower()
+                    self.net_url_buffer = [] # Clear buffer for next time
+                    self.net_busy = True
+                    # Start fetch in a background thread
+                    threading.Thread(target=self._network_fetch, args=(url,), daemon=True).start()
+                else:
+                    # Build the URL string
+                    self.net_url_buffer.append(chr(value))
+            return
+
         # ACI Save Trigger
-        elif addr == 0xC028:
+        elif addr == 0xC028 and not self.no_aci:
             start_addr = self.memory[0x26] | (self.memory[0x27] << 8)
             end_addr = self.memory[0x24] | (self.memory[0x25] << 8)
-            
+
             # Ensure the end is after the start
             if end_addr >= start_addr:
                 if tkinter_available:
                     file_path = filedialog.asksaveasfilename(filetypes=[("Binary file", "*.bin"), ("All files", "*.*")])
                 else:
+                    self.reset_terminal()
                     file_path = input('Input a binary file to save: ')
+                    self.init_terminal()
                 if file_path:
                     try:
                         with open(file_path, "wb") as f: f.write(self.memory[start_addr:end_addr + 1])
                         print(f"Saved {end_addr - start_addr + 1} bytes to {file_path}")
                     except Exception as e:
                         print(f"Save failed: {e}")
+            return
 
         # RAM
         else:
             self.memory[addr] = value
-        
-        return
+            return
+
+    def save_state(self):
+        state = b''
+        if self.cpu.pc < 256:
+            state += bytes([0x00, self.cpu.pc])
+        else:
+            state += bytes([self.cpu.pc // 256, self.cpu.pc % 256])
+        state += bytes([self.cpu.a, self.cpu.x, self.cpu.y, self.cpu.sp, self.cpu.p])
+        state += bytes(self.memory)
+        self.dsp_mem = self.dsp_mem.replace(b'\n', b'')
+        state += bytes(bytes(1000 - len(self.dsp_mem)) + self.dsp_mem)
+        with open(f'save_state_{int(time())}.bin', 'wb') as f:
+            f.write(state)
+
+    def load_state(self, filename):
+        with open(filename, 'rb') as f:
+            self.cpu.pc = int(f.read(2).hex(), 16)
+            self.cpu.a = int(f.read(1).hex(), 16)
+            self.cpu.x = int(f.read(1).hex(), 16)
+            self.cpu.y = int(f.read(1).hex(), 16)
+            self.cpu.sp = int(f.read(1).hex(), 16)
+            self.cpu.p = int(f.read(1).hex(), 16)
+            self.memory = bytearray(f.read(65536))
+            dsp_mem = bytearray(f.read(1000))
+            for value in dsp_mem:
+                self.display_callback(self, value, self.raw_display)
+            self.dspcr = True
 
     def key_pressed(self, key, bench):
         if key:
-            ascii_val = int(ord(key).to_bytes().hex(), 16)
+            ascii_val = ord(key)
             if (ascii_val > 31 and ascii_val < 96) or ascii_val == 13 or ascii_val == 27:
                 if not bench:
                     self.kbd = ascii_val | 0x80
                     self.kbdcr = 0x80
             elif ascii_val == 3: # EOF (Break)
                 raise KeyboardInterrupt
-            elif ascii_val == 8: # Backspace
+            elif ascii_val == 8 or ascii_val == 127: # Backspace
                 if not bench:
-                    self.kbd = 0x5f | 0x80
+                    self.kbd = 0x5F | 0x80
                     self.kbdcr = 0x80
             elif ascii_val == 9: # Tab
                 if not bench:
                     self.reset()
                     self.dspcr = 0x00
+            elif ascii_val == 10: # Ctrl+Enter
+                if not bench:
+                    self.save_state()
 
     def terminate(self):
         self.terminated = True
@@ -1453,6 +1957,9 @@ class Apple1System:
     def reset(self):
         if self.terminated: raise KeyboardInterrupt
         self.cpu.reset()
+        self.net_url_buffer = []
+        self.net_response_queue = deque()
+        self.net_busy = False
 
 def setup_console(system):
     """Sets up the console for raw input depending on the OS."""
@@ -1472,27 +1979,34 @@ def setup_console(system):
                     sleep(0.0000000001)
             except KeyboardInterrupt:
                 system.terminate()
+        # Not needed on Windows
+        def init_terminal():
+            pass
         def reset_terminal():
-            # Not needed on Windows
             pass
         threading.Thread(target=get_key, daemon=True).start()
-        return reset_terminal
+        return init_terminal, reset_terminal
     else:
         import tty, termios, select
-        old_settings = tty.setraw(sys.stdin.fileno())
+        old_settings = termios.tcgetattr(sys.stdin.fileno())
         def get_key():
             try:
                 while True:
                     if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
-                        system.key_pressed(sys.stdin.read(1).upper(), system.bench)
+                        char = sys.stdin.read(1).upper()
+                        system.key_pressed(char, system.bench)
                     sleep(0.0000000001)
             except KeyboardInterrupt:
                 system.terminate()
+        def init_terminal():
+            # Set terminal to raw mode
+            tty.setraw(sys.stdin.fileno())
         def reset_terminal():
             # Restore terminal settings on exit
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSAFLUSH, old_settings)
+        init_terminal()
         threading.Thread(target=get_key, daemon=True).start()
-        return reset_terminal
+        return init_terminal, reset_terminal
 
 def console_display(self, char, raw_display):
     """Translates Apple 1 character codes to the system console."""
@@ -1501,16 +2015,24 @@ def console_display(self, char, raw_display):
         sys.stdout.write("\r\n")
         sys.stdout.flush()
         self.char_in_line = 0
+        self.dsp_mem.append(char)
+        while self.dsp_mem.count(0x0D) + self.dsp_mem.count(0x0A) > 25:
+            self.dsp_mem.pop(0)
     elif char > 0x1F:
         # Signetics 2513 character set
         charset = "                                 !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-        sys.stdout.write(charset[char])  
+        sys.stdout.write(charset[char])
         sys.stdout.flush()
         self.char_in_line += 1
-        if self.char_in_line >= 40 and not raw_display:
-            sys.stdout.write("\r\n")
-            sys.stdout.flush()
+        self.dsp_mem.append(char)
+        if self.char_in_line >= 40:
+            if not raw_display:
+                sys.stdout.write("\r\n")
+                sys.stdout.flush()
+            self.dsp_mem.append(0x0A)
             self.char_in_line = 0
+            while self.dsp_mem.count(0x0D) + self.dsp_mem.count(0x0A) > 25:
+                self.dsp_mem.pop(0)
 
 def null_display(self, char, raw_display):
     """A null display."""
@@ -1518,33 +2040,40 @@ def null_display(self, char, raw_display):
 
 def apple1_emulator(args):
     """Main program."""
-    turbo = args.turbo # Turbo mode (will allow maximum speed)
-    bench = args.bench # Benchmark mode (will disable display and keyboard, while displaying emulated CPU speed in kinst/s)
-    raw_display = args.raw_display # Raw display mode (will not simulate a 40-column display)
-    system = Apple1System(null_display, raw_display, bench) if bench else Apple1System(console_display, raw_display, bench)
-    
-    # Initialize CPU (Reset vector loaded automatically by MPU class via MemoryBus)
+    # Arguments
+    mpu, turbo, bench, raw_display, no_aci, network, fast_display, alt_display, load_state = (MPU65C02 if args.turbo else MPU6502), args.turbo, args.bench, args.raw_display, args.no_aci, args.network, args.fast_display, args.alt_display, args.load_state
+
+    # System
+    system = Apple1System(mpu, null_display, raw_display, no_aci, network, fast_display, alt_display, bench) if bench else Apple1System(mpu, console_display, raw_display, no_aci, network, fast_display, alt_display, bench)
+
+
+    # Initialize CPU
     system.reset()
+
+    if load_state: system.load_state(load_state)
+
     if bench:
         start = time()
         count = 0
-    
+
     try:
         while True:
             # Execute one instruction (2-7 cycles)
-            # The maximum speed is ~500-1500 kinst/s, or ~1-10 MHz, depending on single-core performance
             system.step()
-            
+
+            if system.alt_display and system.dsp_buffer and time() >= system.dsp_clock:
+                system.display_callback(system, system.dsp_buffer.popleft(), system.raw_display)
+                system.dsp_clock = time() + 1 / 60.05
+
             # Non-turbo mode (will limit maximum speed, usually to a few KHz, which is normally enough for most Apple-1 software)
             if not turbo: sleep(0.0000000001)
 
             if bench:
-                count += 1
                 if time() - start >= 1:
-                    print(count / 1000, end='\r\n')
+                    print((system.cpu.processorCycles - count) / 1000, end='\r\n')
                     start = time()
-                    count = 0
-            
+                    count = system.cpu.processorCycles
+
     except KeyboardInterrupt:
         system.reset_terminal()
         pass
@@ -1557,5 +2086,13 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--turbo', action='store_true', help='run CPU at full speed')
     parser.add_argument('-b', '--bench', action='store_true', help='test maximum CPU speed')
     parser.add_argument('-r', '--raw-display', action='store_true', help='do not simulate a 40-column display')
+    parser.add_argument('-a', '--no-aci', action='store_true', help='disable Apple Cassette Interface')
+    parser.add_argument('-n', '--network', action='store_true', help='enable networking interface')
+    parser.add_argument('-f', '--fast-display', action='store_true', help='unlocks display from 60 cps limit')
+    parser.add_argument('--alt-display', action='store_true', help='use alternate non-blocking 60 cps display')
+    parser.add_argument('--65c02', action='store_true', help='use WDC 65C02 instead of NMOS 6502 (may cause compatibility issues)')
+    parser.add_argument('-l', '--load-state', action='store', help='load save state from disk')
     args = parser.parse_args()
+    if not requests_available and args.network: raise ModuleNotFoundError('Requests module not found. Install it with: pip install requests')
+    if not args.no_aci and args.network: args.no_aci = True
     apple1_emulator(args)
