@@ -15,8 +15,8 @@ from random import random
 from os.path import exists
 
 # --- ROM Data ---
-# Wozmon ($FF00 - $FFF9)
-WOZMON_DATA = b"\xd8X\xa0\x7f\x8c\x12\xd0\xa9\xa7\x8d\x11\xd0\x8d\x13\xd0\xc9\xdf\xf0\x13\xc9\x9b\xf0\x03\xc8\x10\x0f\xa9\xdc \xef\xff\xa9\x8d \xef\xff\xa0\x01\x880\xf6\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x8d\xd0\xd4\xa0\xff\xa9\x00\xaa\n\x85+\xc8\xb9\x00\x02\xc9\x8d\xf0\xd4\xc9\xae\x90\xf4\xf0\xf0\xc9\xba\xf0\xeb\xc9\xd2\xf0;\x86(\x86)\x84*\xb9\x00\x02I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\x11\n\n\n\n\xa2\x04\n&(&)\xca\xd0\xf8\xc8\xd0\xe0\xc4*\xf0\x97$+P\x10\xa5(\x81&\xe6&\xd0\xb5\xe6'LD\xffl$\x000+\xa2\x02\xb5'\x95%\x95#\xca\xd0\xf7\xd0\x14\xa9\x8d \xef\xff\xa5% \xdc\xff\xa5$ \xdc\xff\xa9\xba \xef\xff\xa9\xa0 \xef\xff\xa1$ \xdc\xff\x86+\xa5$\xc5(\xa5%\xe5)\xb0\xc1\xe6$\xd0\x02\xe6%\xa5$)\x07\x10\xc8HJJJJ \xe5\xffh)\x0f\t\xb0\xc9\xba\x90\x02i\x06,\x12\xd00\xfb\x8d\x12\xd0`\x00\x00"
+# Wozmon ($FF00 - $FFFF)
+WOZMON_DATA = b"\xd8X\xa0\x7f\x8c\x12\xd0\xa9\xa7\x8d\x11\xd0\x8d\x13\xd0\xc9\xdf\xf0\x13\xc9\x9b\xf0\x03\xc8\x10\x0f\xa9\xdc \xef\xff\xa9\x8d \xef\xff\xa0\x01\x880\xf6\xad\x11\xd0\x10\xfb\xad\x10\xd0\x99\x00\x02 \xef\xff\xc9\x8d\xd0\xd4\xa0\xff\xa9\x00\xaa\n\x85+\xc8\xb9\x00\x02\xc9\x8d\xf0\xd4\xc9\xae\x90\xf4\xf0\xf0\xc9\xba\xf0\xeb\xc9\xd2\xf0;\x86(\x86)\x84*\xb9\x00\x02I\xb0\xc9\n\x90\x06i\x88\xc9\xfa\x90\x11\n\n\n\n\xa2\x04\n&(&)\xca\xd0\xf8\xc8\xd0\xe0\xc4*\xf0\x97$+P\x10\xa5(\x81&\xe6&\xd0\xb5\xe6'LD\xffl$\x000+\xa2\x02\xb5'\x95%\x95#\xca\xd0\xf7\xd0\x14\xa9\x8d \xef\xff\xa5% \xdc\xff\xa5$ \xdc\xff\xa9\xba \xef\xff\xa9\xa0 \xef\xff\xa1$ \xdc\xff\x86+\xa5$\xc5(\xa5%\xe5)\xb0\xc1\xe6$\xd0\x02\xe6%\xa5$)\x07\x10\xc8HJJJJ \xe5\xffh)\x0f\t\xb0\xc9\xba\x90\x02i\x06,\x12\xd00\xfb\x8d\x12\xd0`\x00\x00\x00\x0f\x00\xff\x00\x00"
 
 # Modified Apple Cassette Interface ($C100 - $C17B)
 # Reads or writes a cassette port once, then returns.
@@ -1735,8 +1735,7 @@ class Apple1System:
         self.dsp_mem = bytearray()
 
         # PIA
-        self.kbd = 0x00
-        self.kbdcr = 0x00 # Bit 7 set when key ready
+        self.kbd = bytearray()
         self.dsp = 0x00
         self.dspcr = False # True when display ready (set to True when $7F received)
         self.dsp_clock = 0
@@ -1770,9 +1769,6 @@ class Apple1System:
     def load_roms(self):
         # Load Wozmon
         self.wozmon = WOZMON_DATA
-        self.memory[self.cpu.RESET], self.memory[self.cpu.RESET+1] = 0x00, 0xff
-        self.memory[self.cpu.NMI], self.memory[self.cpu.NMI+1] = 0x00, 0x0f
-        self.memory[self.cpu.IRQ], self.memory[self.cpu.IRQ+1] = 0x00, 0x00
 
         if not self.no_aci:
             # Load ACI
@@ -1785,12 +1781,9 @@ class Apple1System:
     def read(self, addr):
         # PIA Keyboard
         if addr == 0xD010:
-            val = self.kbd
-            self.kbd &= 0x7F # Clear strobe bit in register after read
-            self.kbdcr = 0x00 # Clear ready flag
-            return val
+            return self.kbd.pop(0) if self.kbd else 0x00
         elif addr == 0xD011:
-            return self.kbdcr # Bit 7 is status
+            return 0x80 if self.kbd else 0x00
 
         # PIA Display
         elif addr == 0xD012:
@@ -1833,11 +1826,13 @@ class Apple1System:
                     print(f"Load failed: {e}")
             return 0 # Return dummy value
 
+        elif addr >= 0xC000 and addr <= 0xC0FF and self.exp:
+            return self.exp[addr - 0xC000] if addr - 0xC000 < len(self.exp) else 0x00
         elif addr >= 0xC100 and addr <= 0xC1FF and self.exp:
-            return self.exp[addr - 0xC100]
+            return self.exp[addr - 0xC100] if addr - 0xC100 < len(self.exp) else 0x00
 
-        elif addr >= 0xFF00 and addr <= 0xFFF9 and self.wozmon:
-            return self.wozmon[addr - 0xFF00]
+        elif addr >= 0xFF00 and addr <= 0xFFFF and self.wozmon:
+            return self.wozmon[addr - 0xFF00] if addr - 0xFF00 < len(self.wozmon) else 0x00
 
         return self.memory[addr]
 
@@ -1930,14 +1925,12 @@ class Apple1System:
             ascii_val = ord(key)
             if (ascii_val > 31 and ascii_val < 96) or ascii_val == 13 or ascii_val == 27:
                 if not bench:
-                    self.kbd = ascii_val | 0x80
-                    self.kbdcr = 0x80
+                    self.kbd.append(ascii_val | 0x80)
             elif ascii_val == 3: # EOF (Break)
                 raise KeyboardInterrupt
             elif ascii_val == 8 or ascii_val == 127: # Backspace
                 if not bench:
-                    self.kbd = 0x5F | 0x80
-                    self.kbdcr = 0x80
+                    self.kbd.append(0x5F | 0x80)
             elif ascii_val == 9: # Tab
                 if not bench:
                     self.reset()
